@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUp, ArrowDown, Loader2, RefreshCw, Target, Clock, Sparkles } from "lucide-react";
+import { ArrowUp, ArrowDown, RefreshCw, Target, Clock, Sparkles, Lock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SignalDisplayProps {
@@ -17,26 +17,32 @@ export const SignalDisplay = ({ platform, pair, expiration }: SignalDisplayProps
   const [confidence, setConfidence] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const [analysisStep, setAnalysisStep] = useState(0);
+  const [canRefresh, setCanRefresh] = useState(false);
+  const [signalResult, setSignalResult] = useState<"pending" | "win" | "loss" | null>(null);
 
   const analysisSteps = [
-    "Подключение к серверу...",
-    "Анализ тренда...",
-    "Проверка индикаторов...",
-    "Расчёт вероятности...",
-    "Генерация сигнала...",
+    { label: "Подключение к серверу...", icon: "🔗" },
+    { label: "Синхронизация графика...", icon: "📊" },
+    { label: "Анализ свечного паттерна...", icon: "🕯️" },
+    { label: "Проверка индикаторов RSI, MACD...", icon: "📈" },
+    { label: "Анализ объёмов...", icon: "📉" },
+    { label: "Расчёт вероятности...", icon: "🎯" },
+    { label: "Генерация сигнала...", icon: "✨" },
   ];
 
-  useEffect(() => {
+  const generateSignal = useCallback(() => {
     setLoading(true);
     setSignal(null);
     setAnalysisStep(0);
+    setCanRefresh(false);
+    setSignalResult(null);
 
     const stepInterval = setInterval(() => {
       setAnalysisStep((prev) => {
         if (prev < analysisSteps.length - 1) return prev + 1;
         return prev;
       });
-    }, 500);
+    }, 400);
 
     const timer = setTimeout(() => {
       clearInterval(stepInterval);
@@ -46,18 +52,31 @@ export const SignalDisplay = ({ platform, pair, expiration }: SignalDisplayProps
       setConfidence(randomConfidence);
       setLoading(false);
       setCountdown(expiration);
-    }, 2500);
+    }, 2800);
 
     return () => {
       clearTimeout(timer);
       clearInterval(stepInterval);
     };
-  }, [platform, pair, expiration]);
+  }, [expiration, analysisSteps.length]);
+
+  useEffect(() => {
+    const cleanup = generateSignal();
+    return cleanup;
+  }, [platform, pair, expiration, generateSignal]);
 
   useEffect(() => {
     if (countdown > 0) {
       const timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            setCanRefresh(true);
+            // Simulate result
+            setSignalResult(Math.random() > 0.2 ? "win" : "loss");
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
       return () => clearInterval(timer);
     }
@@ -69,70 +88,65 @@ export const SignalDisplay = ({ platform, pair, expiration }: SignalDisplayProps
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const refreshSignal = () => {
-    setLoading(true);
-    setSignal(null);
-    setAnalysisStep(0);
-
-    const stepInterval = setInterval(() => {
-      setAnalysisStep((prev) => {
-        if (prev < analysisSteps.length - 1) return prev + 1;
-        return prev;
-      });
-    }, 500);
-
-    setTimeout(() => {
-      clearInterval(stepInterval);
-      const randomSignal: SignalType = Math.random() > 0.5 ? "UP" : "DOWN";
-      const randomConfidence = Math.floor(78 + Math.random() * 18);
-      setSignal(randomSignal);
-      setConfidence(randomConfidence);
-      setLoading(false);
-      setCountdown(expiration);
-    }, 2500);
-  };
-
   if (loading) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="glass-strong rounded-2xl p-8"
+        className="glass-card rounded-3xl p-8 relative overflow-hidden"
       >
-        <div className="flex flex-col items-center justify-center min-h-[320px]">
-          <div className="relative mb-8">
-            <div className="w-20 h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        {/* Background animation */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary/30 rounded-full blur-[100px] animate-pulse" />
+        </div>
+
+        <div className="relative flex flex-col items-center justify-center min-h-[380px]">
+          {/* Spinner */}
+          <div className="relative mb-10">
+            <div className="w-24 h-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-3 w-full max-w-xs">
+          {/* Analysis steps */}
+          <div className="space-y-3 w-full max-w-sm">
             {analysisSteps.map((step, index) => (
               <motion.div
-                key={step}
+                key={step.label}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ 
                   opacity: index <= analysisStep ? 1 : 0.3,
                   x: 0 
                 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05 }}
                 className="flex items-center gap-3"
               >
                 <div className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors",
-                  index < analysisStep ? "bg-success text-success-foreground" :
-                  index === analysisStep ? "bg-primary text-primary-foreground animate-pulse" :
-                  "bg-muted text-muted-foreground"
+                  "w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all duration-300",
+                  index < analysisStep 
+                    ? "bg-success/20 text-success" 
+                    : index === analysisStep 
+                    ? "bg-primary/20 text-primary animate-pulse" 
+                    : "bg-muted text-muted-foreground"
                 )}>
-                  {index < analysisStep ? "✓" : index + 1}
+                  {index < analysisStep ? "✓" : step.icon}
                 </div>
                 <span className={cn(
-                  "text-sm transition-colors",
+                  "text-sm transition-colors font-medium",
                   index <= analysisStep ? "text-foreground" : "text-muted-foreground"
                 )}>
-                  {step}
+                  {step.label}
                 </span>
+                {index === analysisStep && (
+                  <div className="ml-auto flex gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -151,47 +165,76 @@ export const SignalDisplay = ({ platform, pair, expiration }: SignalDisplayProps
         className="space-y-4"
       >
         {/* Main Signal Card */}
-        <div
-          className={cn(
-            "relative rounded-2xl p-8 overflow-hidden",
-            signal === "UP" ? "bg-success/5" : "bg-destructive/5"
-          )}
-        >
-          {/* Glow effect */}
-          <div className={cn(
-            "absolute inset-0 opacity-30",
-            signal === "UP" ? "glow-success" : "glow-danger"
-          )} />
-
-          {/* Animated rings */}
-          <div className="absolute inset-0 flex items-center justify-center">
+        <div className={cn(
+          "relative rounded-3xl p-8 overflow-hidden glass-card",
+          signalResult === "win" && "ring-2 ring-success/50",
+          signalResult === "loss" && "ring-2 ring-destructive/50"
+        )}>
+          {/* Animated background */}
+          <div className="absolute inset-0">
             <div className={cn(
-              "w-40 h-40 rounded-full absolute animate-pulse-ring",
+              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full blur-[80px] transition-colors duration-500",
               signal === "UP" ? "bg-success/20" : "bg-destructive/20"
             )} />
+          </div>
+
+          {/* Animated rings */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className={cn(
-              "w-32 h-32 rounded-full absolute animate-pulse-ring",
-              signal === "UP" ? "bg-success/30" : "bg-destructive/30"
+              "w-48 h-48 rounded-full absolute animate-pulse-ring opacity-30",
+              signal === "UP" ? "bg-success" : "bg-destructive"
+            )} />
+            <div className={cn(
+              "w-36 h-36 rounded-full absolute animate-pulse-ring opacity-40",
+              signal === "UP" ? "bg-success" : "bg-destructive"
             )} style={{ animationDelay: "0.5s" }} />
           </div>
 
           <div className="relative z-10 flex flex-col items-center">
+            {/* Result badge */}
+            {signalResult && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2",
+                  signalResult === "win" 
+                    ? "bg-success text-white glow-success" 
+                    : "bg-destructive text-white glow-danger"
+                )}
+              >
+                {signalResult === "win" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    ПОБЕДА! +$50
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4" />
+                    Убыток -$50
+                  </>
+                )}
+              </motion.div>
+            )}
+
             {/* Signal Icon */}
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", damping: 15 }}
+              transition={{ type: "spring", damping: 12, stiffness: 100 }}
               className={cn(
-                "w-28 h-28 rounded-full flex items-center justify-center mb-6 animate-signal-glow",
+                "w-32 h-32 rounded-full flex items-center justify-center mb-6",
                 signal === "UP" 
-                  ? "bg-gradient-to-br from-success to-emerald-600 glow-success" 
-                  : "bg-gradient-to-br from-destructive to-red-600 glow-danger"
+                  ? "bg-gradient-to-br from-success via-emerald-500 to-green-600 glow-success" 
+                  : "bg-gradient-to-br from-destructive via-red-500 to-rose-600 glow-danger",
+                !signalResult && "animate-signal-glow"
               )}
             >
+              <div className="absolute inset-2 rounded-full bg-gradient-to-t from-black/30 to-transparent" />
               {signal === "UP" ? (
-                <ArrowUp className="w-14 h-14 text-white" strokeWidth={3} />
+                <ArrowUp className="w-16 h-16 text-white relative z-10 drop-shadow-lg" strokeWidth={3} />
               ) : (
-                <ArrowDown className="w-14 h-14 text-white" strokeWidth={3} />
+                <ArrowDown className="w-16 h-16 text-white relative z-10 drop-shadow-lg" strokeWidth={3} />
               )}
             </motion.div>
 
@@ -201,82 +244,146 @@ export const SignalDisplay = ({ platform, pair, expiration }: SignalDisplayProps
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className={cn(
-                "font-display text-5xl font-bold mb-4 text-glow",
-                signal === "UP" ? "text-success" : "text-destructive"
+                "text-5xl font-black mb-2 tracking-tight",
+                signal === "UP" ? "text-success text-glow" : "text-destructive text-glow"
               )}
             >
               {signal === "UP" ? "CALL ↑" : "PUT ↓"}
             </motion.h2>
 
-            {/* Confidence */}
-            <motion.div
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-col items-center gap-3"
+              className="text-muted-foreground mb-6"
             >
-              <div className="flex items-center gap-3">
-                <Target className="w-5 h-5 text-muted-foreground" />
-                <span className="text-muted-foreground">Уверенность сигнала</span>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-48 h-3 bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${confidence}%` }}
-                    transition={{ delay: 0.4, duration: 0.8 }}
-                    className={cn(
-                      "h-full rounded-full",
-                      signal === "UP" 
-                        ? "bg-gradient-to-r from-success to-emerald-400" 
-                        : "bg-gradient-to-r from-destructive to-red-400"
-                    )}
-                  />
+              {signal === "UP" ? "Ставьте на повышение" : "Ставьте на понижение"}
+            </motion.p>
+
+            {/* Confidence */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="w-full max-w-xs"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Target className="w-4 h-4" />
+                  <span>Уверенность</span>
                 </div>
                 <span className="font-mono text-2xl font-bold">{confidence}%</span>
+              </div>
+              
+              <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${confidence}%` }}
+                  transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
+                  className={cn(
+                    "h-full rounded-full",
+                    signal === "UP" 
+                      ? "bg-gradient-to-r from-success to-emerald-400" 
+                      : "bg-gradient-to-r from-destructive to-red-400"
+                  )}
+                />
               </div>
             </motion.div>
           </div>
         </div>
 
         {/* Timer Card */}
-        {countdown > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-xl p-5 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-primary" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className={cn(
+            "glass-card rounded-2xl p-5",
+            countdown === 0 && "opacity-60"
+          )}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center",
+                countdown > 0 ? "bg-primary/20" : "bg-muted"
+              )}>
+                <Clock className={cn(
+                  "w-6 h-6",
+                  countdown > 0 ? "text-primary" : "text-muted-foreground"
+                )} />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Время до экспирации</p>
-                <p className="font-mono text-2xl font-bold text-primary">{formatTime(countdown)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {countdown > 0 ? "До экспирации осталось" : "Время истекло"}
+                </p>
+                <p className={cn(
+                  "font-mono text-3xl font-bold",
+                  countdown > 0 ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {formatTime(countdown)}
+                </p>
               </div>
             </div>
             
-            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: "100%" }}
-                animate={{ width: `${(countdown / expiration) * 100}%` }}
-                className="h-full bg-primary rounded-full"
-              />
+            {/* Progress ring */}
+            <div className="relative w-16 h-16">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                  className="text-muted/30"
+                />
+                <motion.circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeLinecap="round"
+                  className={countdown > 0 ? "text-primary" : "text-muted"}
+                  initial={{ strokeDasharray: "176 176", strokeDashoffset: 0 }}
+                  animate={{ strokeDashoffset: 176 - (countdown / expiration) * 176 }}
+                  transition={{ duration: 0.5 }}
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+                {Math.round((countdown / expiration) * 100)}%
+              </span>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
 
         {/* Refresh Button */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          onClick={refreshSignal}
-          className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg transition-all duration-300 hover:opacity-90 glow-primary flex items-center justify-center gap-2 group"
+          transition={{ delay: 0.6 }}
+          onClick={canRefresh ? generateSignal : undefined}
+          disabled={!canRefresh}
+          className={cn(
+            "w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-300",
+            canRefresh 
+              ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground glow-primary hover:opacity-90 cursor-pointer interactive-scale" 
+              : "glass-button text-muted-foreground cursor-not-allowed"
+          )}
         >
-          <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-          Получить новый сигнал
+          {canRefresh ? (
+            <>
+              <RefreshCw className="w-5 h-5" />
+              Получить новый сигнал
+            </>
+          ) : (
+            <>
+              <Lock className="w-5 h-5" />
+              Дождитесь окончания сигнала ({formatTime(countdown)})
+            </>
+          )}
         </motion.button>
       </motion.div>
     </AnimatePresence>
