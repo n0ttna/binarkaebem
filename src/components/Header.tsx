@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "./LanguageSelector";
+import { ThemeToggle } from "./ThemeToggle";
 import { useCryptoPrices } from "@/hooks/useCryptoPrices";
 import { useDynamicStats } from "@/hooks/useDynamicStats";
 import { useI18n } from "@/lib/i18n";
@@ -39,7 +40,7 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
   return (
     <header className="relative z-50">
       {/* Top ticker bar */}
-      <div className="bg-background/60 backdrop-blur-xl border-b border-white/5 overflow-hidden">
+      <div className="bg-background/60 backdrop-blur-xl border-b border-border/50 overflow-hidden">
         <div className="container mx-auto">
           <div className="flex items-center gap-4 md:gap-6 py-2 px-4">
             {/* Online indicator */}
@@ -100,7 +101,7 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
       </div>
 
       {/* Main header */}
-      <div className="glass-panel border-b border-white/5">
+      <div className="glass-panel border-b border-border/50">
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between gap-4">
             {/* Logo & Brand - Clickable */}
@@ -109,6 +110,8 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
               className="flex items-center gap-3 cursor-pointer shrink-0"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               <div className="relative group">
                 <div className="absolute inset-0 bg-primary/40 blur-2xl rounded-full opacity-60 group-hover:opacity-100 transition-opacity" />
@@ -173,13 +176,14 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
               </div>
             </motion.div>
 
-            {/* Right Actions - Language only */}
+            {/* Right Actions - Theme & Language */}
             <motion.div 
-              className="flex items-center"
+              className="flex items-center gap-2"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
+              <ThemeToggle />
               <LanguageSelector />
             </motion.div>
           </div>

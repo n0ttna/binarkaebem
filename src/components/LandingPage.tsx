@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Zap, TrendingUp, Shield, ArrowRight, Activity, Users, BarChart3, Clock, CheckCircle2, Star, Globe, Trophy } from "lucide-react";
+import { Zap, TrendingUp, Shield, ArrowRight, Activity, Users, BarChart3, Clock, CheckCircle2, Globe, Trophy, Sparkles } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useDynamicStats } from "@/hooks/useDynamicStats";
 
@@ -7,23 +7,42 @@ interface LandingPageProps {
   onStart: () => void;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" as const },
+  },
+};
+
 export const LandingPage = ({ onStart }: LandingPageProps) => {
   const { t } = useI18n();
   const { signalsCount, profit, winRate, onlineCount } = useDynamicStats();
 
   return (
-    <div className="min-h-[85vh] flex flex-col items-center justify-center px-4 py-8 md:py-12">
+    <motion.div 
+      className="min-h-[85vh] flex flex-col items-center justify-center px-4 py-8 md:py-12"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center max-w-5xl mx-auto"
-      >
+      <div className="text-center max-w-5xl mx-auto">
         {/* Live Badge */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
+          variants={itemVariants}
           className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full glass-card mb-6 md:mb-8"
         >
           <span className="relative flex h-2.5 w-2.5">
@@ -40,9 +59,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
 
         {/* Title */}
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          variants={itemVariants}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-4 md:mb-6 leading-tight"
         >
           {t("landing.title")}{" "}
@@ -51,9 +68,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
 
         {/* Subtitle */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          variants={itemVariants}
           className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 md:mb-10 px-4"
         >
           {t("landing.subtitle")}
@@ -61,25 +76,28 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
 
         {/* CTA Button */}
         <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          variants={itemVariants}
           onClick={onStart}
-          className="group relative px-8 sm:px-10 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground glow-primary overflow-hidden interactive-scale"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="group relative px-8 sm:px-10 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground glow-primary overflow-hidden"
         >
           <span className="relative z-10 flex items-center gap-3">
-            <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
             {t("landing.startButton")}
             <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
           </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            initial={{ x: "-100%" }}
+            animate={{ x: "100%" }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+          />
         </motion.button>
 
         {/* Trust indicators */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          variants={itemVariants}
           className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-6 md:mt-8 text-sm text-muted-foreground"
         >
           <div className="flex items-center gap-2">
@@ -95,7 +113,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             <span>{t("landing.trustInstant")}</span>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
 
       {/* Live Stats Cards */}
       <motion.div
@@ -180,10 +198,8 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         ].map((feature, i) => (
           <motion.div
             key={feature.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 + i * 0.1 }}
-            className="glass-card p-5 md:p-6 rounded-2xl group hover:scale-[1.02] transition-transform"
+            whileHover={{ scale: 1.03, y: -5 }}
+            className="glass-card p-5 md:p-6 rounded-2xl group transition-all"
           >
             <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 shadow-lg`}>
               <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
@@ -196,27 +212,27 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
 
       {/* Platforms preview */}
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
+        variants={itemVariants}
         className="mt-10 md:mt-16 text-center"
       >
         <p className="text-sm text-muted-foreground mb-4">{t("landing.supportedPlatforms")}</p>
-        <div className="flex items-center justify-center gap-4 md:gap-6">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl glass-card">
-            <span className="text-2xl">💼</span>
-            <span className="font-semibold text-sm">Pocket Option</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl glass-card">
-            <span className="text-2xl">🏆</span>
-            <span className="font-semibold text-sm">1Win</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl glass-card">
-            <span className="text-2xl">🎯</span>
-            <span className="font-semibold text-sm">Binarium</span>
-          </div>
+        <div className="flex items-center justify-center gap-4 md:gap-6 flex-wrap">
+          {[
+            { emoji: "💼", name: "Pocket Option" },
+            { emoji: "🏆", name: "1Win" },
+            { emoji: "🎯", name: "Binarium" },
+          ].map((platform, i) => (
+            <motion.div 
+              key={platform.name}
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl glass-card cursor-pointer"
+            >
+              <span className="text-2xl">{platform.emoji}</span>
+              <span className="font-semibold text-sm">{platform.name}</span>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };
