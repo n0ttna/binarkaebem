@@ -9,11 +9,12 @@ import {
   Users,
   BarChart3,
   Clock,
-  Sparkles
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "./LanguageSelector";
 import { useCryptoPrices } from "@/hooks/useCryptoPrices";
+import { useDynamicStats } from "@/hooks/useDynamicStats";
 import { useI18n } from "@/lib/i18n";
 
 interface HeaderProps {
@@ -22,7 +23,8 @@ interface HeaderProps {
 
 export const Header = ({ onLogoClick }: HeaderProps) => {
   const [time, setTime] = useState(new Date());
-  const { prices, signalsCount } = useCryptoPrices();
+  const { prices } = useCryptoPrices();
+  const { onlineCount, signalsCount, profit, winRate } = useDynamicStats();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -30,37 +32,42 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
     return () => clearInterval(timer);
   }, []);
 
+  const formatNumber = (num: number) => {
+    return num.toLocaleString("ru-RU");
+  };
+
   return (
     <header className="relative z-50">
       {/* Top ticker bar */}
       <div className="bg-background/60 backdrop-blur-xl border-b border-white/5 overflow-hidden">
         <div className="container mx-auto">
-          <div className="flex items-center gap-6 py-2 px-4">
+          <div className="flex items-center gap-4 md:gap-6 py-2 px-4">
             {/* Online indicator */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2 text-xs"
+              className="flex items-center gap-2 text-xs shrink-0"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
               </span>
-              <Users className="w-3 h-3 text-muted-foreground" />
+              <Users className="w-3 h-3 text-muted-foreground hidden sm:block" />
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">12,847</span> {t("header.online")}
+                <span className="font-semibold text-foreground">{formatNumber(onlineCount)}</span>
+                <span className="hidden sm:inline"> {t("header.online")}</span>
               </span>
             </motion.div>
 
-            {/* Market ticker */}
-            <div className="flex-1 flex items-center gap-8 overflow-x-auto scrollbar-hide">
+            {/* Market ticker - scrollable on mobile */}
+            <div className="flex-1 flex items-center gap-4 md:gap-8 overflow-x-auto scrollbar-hide">
               {prices.map((item, i) => (
                 <motion.div
                   key={item.pair}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="flex items-center gap-3 text-xs whitespace-nowrap group"
+                  className="flex items-center gap-2 md:gap-3 text-xs whitespace-nowrap group shrink-0"
                 >
                   <span className="text-muted-foreground group-hover:text-foreground transition-colors">{item.pair}</span>
                   <span className="font-mono font-semibold">${item.price}</span>
@@ -76,7 +83,7 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
             </div>
 
             {/* Status */}
-            <div className="hidden md:flex items-center gap-3 text-xs">
+            <div className="hidden md:flex items-center gap-3 text-xs shrink-0">
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-success/10 text-success">
                 <Globe className="w-3 h-3" />
                 <span className="font-medium">{t("header.marketOpen")}</span>
@@ -94,34 +101,29 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
 
       {/* Main header */}
       <div className="glass-panel border-b border-white/5">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex items-center justify-between gap-4">
             {/* Logo & Brand - Clickable */}
             <motion.button 
               onClick={onLogoClick}
-              className="flex items-center gap-4 cursor-pointer"
+              className="flex items-center gap-3 cursor-pointer shrink-0"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
               <div className="relative group">
-                {/* Glow effect */}
                 <div className="absolute inset-0 bg-primary/40 blur-2xl rounded-full opacity-60 group-hover:opacity-100 transition-opacity" />
-                
-                {/* Logo container */}
-                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-accent flex items-center justify-center glow-primary overflow-hidden">
+                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-accent flex items-center justify-center glow-primary overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                  <Zap className="w-7 h-7 text-white relative z-10" />
-                  
-                  {/* Shine effect */}
+                  <Zap className="w-5 h-5 md:w-6 md:h-6 text-white relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent" />
                 </div>
               </div>
               
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
+              <div className="hidden sm:block">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight">
                   <span className="gradient-text">SignalPro</span>
                 </h1>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-[10px] md:text-xs text-muted-foreground">
                   {t("header.tagline")}
                 </p>
               </div>
@@ -129,43 +131,43 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
 
             {/* Center Stats - Desktop only */}
             <motion.div 
-              className="hidden xl:flex items-center gap-4"
+              className="hidden lg:flex items-center"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="glass-card rounded-2xl p-4 flex items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-success/20 to-success/5 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-success" />
+              <div className="glass-card rounded-2xl p-3 flex items-center gap-4 xl:gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-success/20 to-success/5 flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 text-success" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{t("header.winrate")}</p>
-                    <p className="font-mono text-lg font-bold text-success">87.3%</p>
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium">{t("header.winrate")}</p>
+                    <p className="font-mono text-base font-bold text-success">{winRate}%</p>
                   </div>
                 </div>
                 
-                <div className="w-px h-10 bg-border" />
+                <div className="w-px h-8 bg-border" />
                 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{t("header.signalsToday")}</p>
-                    <p className="font-mono text-lg font-bold">{signalsCount}</p>
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium">{t("header.signalsToday")}</p>
+                    <p className="font-mono text-base font-bold">{formatNumber(signalsCount)}</p>
                   </div>
                 </div>
                 
-                <div className="w-px h-10 bg-border" />
+                <div className="w-px h-8 bg-border" />
                 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-accent" />
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-accent" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{t("header.profit")}</p>
-                    <p className="font-mono text-lg font-bold text-success">+$12,450</p>
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium">{t("header.profit")}</p>
+                    <p className="font-mono text-base font-bold text-success">+${formatNumber(profit)}</p>
                   </div>
                 </div>
               </div>
@@ -173,7 +175,7 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
 
             {/* Right Actions - Language only */}
             <motion.div 
-              className="flex items-center gap-2"
+              className="flex items-center"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}

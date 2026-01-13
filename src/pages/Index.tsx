@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { LandingPage } from "@/components/LandingPage";
@@ -10,6 +10,7 @@ import { TradingChart } from "@/components/TradingChart";
 import { SignalDisplay } from "@/components/SignalDisplay";
 import { RotateCcw, CheckCircle2, ArrowLeft, Sparkles } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { getUserData, saveUserData } from "@/hooks/useDynamicStats";
 
 type Step = "landing" | "platform" | "register" | "pair" | "expiration" | "signal";
 
@@ -21,8 +22,25 @@ const Index = () => {
   const [currentStep, setCurrentStep] = useState<Step>("landing");
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
+  // Check if user has already completed registration before
+  useEffect(() => {
+    const userData = getUserData();
+    if (userData.hasCompletedRegistration && userData.platform) {
+      setPlatform(userData.platform);
+      // Skip to pair selection if returning user
+      setCurrentStep("pair");
+    }
+  }, []);
+
   const handleStartTrading = () => {
-    setCurrentStep("platform");
+    const userData = getUserData();
+    if (userData.hasCompletedRegistration && userData.platform) {
+      // Returning user - skip to pair selection
+      setPlatform(userData.platform);
+      setCurrentStep("pair");
+    } else {
+      setCurrentStep("platform");
+    }
   };
 
   const handlePlatformSelect = (p: string) => {
@@ -33,6 +51,11 @@ const Index = () => {
 
   const handleRegistrationComplete = () => {
     setShowRegistrationModal(false);
+    // Save user data to localStorage
+    saveUserData({
+      platform: platform,
+      hasCompletedRegistration: true,
+    });
     setCurrentStep("pair");
   };
 
@@ -47,6 +70,22 @@ const Index = () => {
   };
 
   const handleReset = () => {
+    setPair(null);
+    setExpiration(null);
+    // Keep platform from localStorage but go back to pair selection
+    const userData = getUserData();
+    if (userData.hasCompletedRegistration && userData.platform) {
+      setPlatform(userData.platform);
+      setCurrentStep("pair");
+    } else {
+      setPlatform(null);
+      setCurrentStep("landing");
+    }
+  };
+
+  const handleFullReset = () => {
+    // Complete reset including clearing saved data
+    localStorage.removeItem("signalpro_user_data");
     setPlatform(null);
     setPair(null);
     setExpiration(null);
@@ -54,15 +93,23 @@ const Index = () => {
   };
 
   const handleLogoClick = () => {
-    handleReset();
+    setPair(null);
+    setExpiration(null);
+    setCurrentStep("landing");
   };
 
   const goBack = () => {
     if (currentStep === "platform") {
       setCurrentStep("landing");
     } else if (currentStep === "pair") {
-      setPlatform(null);
-      setCurrentStep("platform");
+      // Don't go back to platform if already registered
+      const userData = getUserData();
+      if (!userData.hasCompletedRegistration) {
+        setPlatform(null);
+        setCurrentStep("platform");
+      } else {
+        setCurrentStep("landing");
+      }
     } else if (currentStep === "expiration") {
       setPair(null);
       setCurrentStep("pair");
@@ -95,22 +142,22 @@ const Index = () => {
 
       <Header onLogoClick={handleLogoClick} />
 
-      <main className="relative container mx-auto px-4 py-8 max-w-6xl">
+      <main className="relative container mx-auto px-4 py-6 md:py-8 max-w-6xl">
         {/* Progress Steps */}
         {showSteps && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-3 mb-12"
+            className="flex items-center justify-center gap-2 md:gap-3 mb-8 md:mb-12 overflow-x-auto scrollbar-hide"
           >
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center gap-3">
+              <div key={step.id} className="flex items-center gap-2 md:gap-3 shrink-0">
                 <motion.div
                   initial={false}
                   animate={{
                     scale: currentStep === step.id ? 1.05 : 1,
                   }}
-                  className={`relative flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-semibold transition-all duration-500 ${
+                  className={`relative flex items-center gap-1.5 md:gap-2.5 px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold transition-all duration-500 ${
                     step.done
                       ? "glass-card text-success"
                       : currentStep === step.id
@@ -119,11 +166,11 @@ const Index = () => {
                   }`}
                 >
                   {step.done ? (
-                    <CheckCircle2 className="w-5 h-5" />
+                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                   ) : currentStep === step.id ? (
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                   ) : (
-                    <span className="w-6 h-6 rounded-full bg-current/10 flex items-center justify-center text-xs">
+                    <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-current/10 flex items-center justify-center text-[10px] md:text-xs">
                       {index + 1}
                     </span>
                   )}
@@ -131,7 +178,7 @@ const Index = () => {
                 </motion.div>
                 
                 {index < steps.length - 1 && (
-                  <div className={`w-8 h-0.5 rounded-full transition-colors duration-500 ${
+                  <div className={`w-4 md:w-8 h-0.5 rounded-full transition-colors duration-500 ${
                     step.done ? "bg-success" : "bg-muted"
                   }`} />
                 )}
@@ -148,7 +195,7 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               onClick={goBack}
-              className="mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
+              className="mb-4 md:mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm font-medium">{t("step.back")}</span>
@@ -212,38 +259,38 @@ const Index = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="space-y-6"
+              className="space-y-4 md:space-y-6"
             >
               {/* Selection Summary */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4"
+                className="glass-card rounded-2xl p-4 md:p-5 flex flex-wrap items-center justify-between gap-3 md:gap-4"
               >
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-secondary/50">
-                    <span className="text-2xl">
+                <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                  <div className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 rounded-xl bg-secondary/50">
+                    <span className="text-xl md:text-2xl">
                       {platform === "pocketoption" ? "💼" : platform === "1win" ? "🏆" : "🎯"}
                     </span>
                     <div>
-                      <p className="text-xs text-muted-foreground">{t("step.platform")}</p>
-                      <p className="font-semibold">
+                      <p className="text-[10px] md:text-xs text-muted-foreground">{t("step.platform")}</p>
+                      <p className="text-sm md:text-base font-semibold">
                         {platform === "pocketoption" ? "Pocket Option" : platform === "1win" ? "1Win" : "Binarium"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-secondary/50">
-                    <span className="text-2xl">💱</span>
+                  <div className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 rounded-xl bg-secondary/50">
+                    <span className="text-xl md:text-2xl">💱</span>
                     <div>
-                      <p className="text-xs text-muted-foreground">{t("step.pair")}</p>
-                      <p className="font-mono font-semibold">{pair}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground">{t("step.pair")}</p>
+                      <p className="text-sm md:text-base font-mono font-semibold">{pair}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-secondary/50">
-                    <span className="text-2xl">⏱️</span>
+                  <div className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 rounded-xl bg-secondary/50">
+                    <span className="text-xl md:text-2xl">⏱️</span>
                     <div>
-                      <p className="text-xs text-muted-foreground">{t("step.time")}</p>
-                      <p className="font-semibold">
+                      <p className="text-[10px] md:text-xs text-muted-foreground">{t("step.time")}</p>
+                      <p className="text-sm md:text-base font-semibold">
                         {expiration >= 60 ? `${expiration / 60} min` : `${expiration} sec`}
                       </p>
                     </div>
@@ -251,15 +298,15 @@ const Index = () => {
                 </div>
                 <button
                   onClick={handleReset}
-                  className="glass-button flex items-center gap-2 px-5 py-3 rounded-xl group"
+                  className="glass-button flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl group"
                 >
                   <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                  <span className="font-semibold">{t("step.change")}</span>
+                  <span className="text-sm font-semibold">{t("step.change")}</span>
                 </button>
               </motion.div>
 
               {/* Chart & Signal */}
-              <div className="grid lg:grid-cols-2 gap-6">
+              <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
                 <TradingChart pair={pair} />
                 <SignalDisplay platform={platform} pair={pair} expiration={expiration} />
               </div>

@@ -34,6 +34,11 @@ const translations: Record<Language, Record<string, string>> = {
     "landing.features.accuracyDesc": "Винрейт более 87%",
     "landing.features.free": "Полностью бесплатно",
     "landing.features.freeDesc": "Без подписок и скрытых платежей",
+    "landing.trustFree": "Бесплатно навсегда",
+    "landing.trustSecure": "Безопасно",
+    "landing.trustInstant": "Мгновенно",
+    "landing.liveStats": "Статистика в реальном времени",
+    "landing.supportedPlatforms": "Поддерживаемые платформы",
     
     // Platform selector
     "platform.title": "Выберите",
@@ -142,6 +147,11 @@ const translations: Record<Language, Record<string, string>> = {
     "landing.features.accuracyDesc": "Winrate over 87%",
     "landing.features.free": "Completely free",
     "landing.features.freeDesc": "No subscriptions or hidden fees",
+    "landing.trustFree": "Free forever",
+    "landing.trustSecure": "Secure",
+    "landing.trustInstant": "Instant",
+    "landing.liveStats": "Live statistics",
+    "landing.supportedPlatforms": "Supported platforms",
     
     "platform.title": "Select",
     "platform.titleHighlight": "platform",
@@ -243,6 +253,11 @@ const translations: Record<Language, Record<string, string>> = {
     "landing.features.accuracyDesc": "87% dan yuqori g'alaba darajasi",
     "landing.features.free": "Butunlay bepul",
     "landing.features.freeDesc": "Obuna va yashirin to'lovlarsiz",
+    "landing.trustFree": "Doim bepul",
+    "landing.trustSecure": "Xavfsiz",
+    "landing.trustInstant": "Tezkor",
+    "landing.liveStats": "Jonli statistika",
+    "landing.supportedPlatforms": "Qo'llab-quvvatlanadigan platformalar",
     
     "platform.title": "Tanlang",
     "platform.titleHighlight": "platforma",
@@ -344,6 +359,11 @@ const translations: Record<Language, Record<string, string>> = {
     "landing.features.accuracyDesc": "Дараҷаи ғалаба зиёда аз 87%",
     "landing.features.free": "Пурра ройгон",
     "landing.features.freeDesc": "Бе обуна ва пардохтҳои пинҳонӣ",
+    "landing.trustFree": "Ҳамеша ройгон",
+    "landing.trustSecure": "Бехатар",
+    "landing.trustInstant": "Фаврӣ",
+    "landing.liveStats": "Омори зинда",
+    "landing.supportedPlatforms": "Платформаҳои дастгиришаванда",
     
     "platform.title": "Интихоб кунед",
     "platform.titleHighlight": "платформа",
