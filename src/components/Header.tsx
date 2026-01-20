@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
+import { TelegramUserBadge } from "./TelegramUserBadge";
 import { useCryptoPrices } from "@/hooks/useCryptoPrices";
 import { useDynamicStats } from "@/hooks/useDynamicStats";
 import { useI18n } from "@/lib/i18n";
@@ -176,13 +177,14 @@ export const Header = ({ onLogoClick }: HeaderProps) => {
               </div>
             </motion.div>
 
-            {/* Right Actions - Theme & Language */}
+            {/* Right Actions - Theme, Language, Telegram User */}
             <motion.div 
               className="flex items-center gap-2"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
+              <TelegramUserBadge />
               <ThemeToggle />
               <LanguageSelector />
             </motion.div>
