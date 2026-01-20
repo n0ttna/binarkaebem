@@ -11,11 +11,13 @@ import { SignalDisplay } from "@/components/SignalDisplay";
 import { RotateCcw, CheckCircle2, ArrowLeft, Sparkles } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { getUserData, saveUserData } from "@/hooks/useDynamicStats";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 type Step = "landing" | "platform" | "register" | "pair" | "expiration" | "signal";
 
 const Index = () => {
   const { t } = useI18n();
+  const { isTelegram, user, hapticFeedback, showBackButton, hideBackButton, isReady } = useTelegramWebApp();
   const [platform, setPlatform] = useState<string | null>(null);
   const [pair, setPair] = useState<string | null>(null);
   const [expiration, setExpiration] = useState<number | null>(null);
@@ -33,6 +35,7 @@ const Index = () => {
   }, []);
 
   const handleStartTrading = () => {
+    if (isTelegram) hapticFeedback('medium');
     const userData = getUserData();
     if (userData.hasCompletedRegistration && userData.platform) {
       // Returning user - skip to pair selection
@@ -44,12 +47,14 @@ const Index = () => {
   };
 
   const handlePlatformSelect = (p: string) => {
+    if (isTelegram) hapticFeedback('light');
     setPlatform(p);
     // Show registration modal
     setShowRegistrationModal(true);
   };
 
   const handleRegistrationComplete = () => {
+    if (isTelegram) hapticFeedback('success');
     setShowRegistrationModal(false);
     // Save user data to localStorage
     saveUserData({
@@ -60,11 +65,13 @@ const Index = () => {
   };
 
   const handlePairSelect = (p: string) => {
+    if (isTelegram) hapticFeedback('light');
     setPair(p);
     setTimeout(() => setCurrentStep("expiration"), 400);
   };
 
   const handleExpirationSelect = (e: number) => {
+    if (isTelegram) hapticFeedback('medium');
     setExpiration(e);
     setTimeout(() => setCurrentStep("signal"), 400);
   };
@@ -99,6 +106,7 @@ const Index = () => {
   };
 
   const goBack = () => {
+    if (isTelegram) hapticFeedback('light');
     if (currentStep === "platform") {
       setCurrentStep("landing");
     } else if (currentStep === "pair") {
@@ -118,6 +126,19 @@ const Index = () => {
       setCurrentStep("expiration");
     }
   };
+
+  // Telegram back button integration
+  useEffect(() => {
+    if (!isTelegram) return;
+    
+    if (currentStep !== "landing") {
+      showBackButton(goBack);
+    } else {
+      hideBackButton();
+    }
+    
+    return () => hideBackButton();
+  }, [currentStep, isTelegram, showBackButton, hideBackButton]);
 
   const steps = [
     { id: "platform", label: t("step.platform"), done: !!platform },
