@@ -1,62 +1,76 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, Star, TrendingUp, TrendingDown, Clock, Flame } from "lucide-react";
+import { Search, Star, Flame } from "lucide-react";
 
 interface CurrencyPairSelectorProps {
   selected: string | null;
   onSelect: (pair: string) => void;
 }
 
-const allPairs = [
-  // Forex Majors
-  { id: "EUR/USD", flag1: "🇪🇺", flag2: "🇺🇸", category: "forex", volatility: "medium", trend: "up", change: 0.12, popular: true },
-  { id: "GBP/USD", flag1: "🇬🇧", flag2: "🇺🇸", category: "forex", volatility: "high", trend: "down", change: -0.34, popular: true },
-  { id: "USD/JPY", flag1: "🇺🇸", flag2: "🇯🇵", category: "forex", volatility: "medium", trend: "up", change: 0.28, popular: true },
-  { id: "USD/CHF", flag1: "🇺🇸", flag2: "🇨🇭", category: "forex", volatility: "low", trend: "up", change: 0.08, popular: false },
-  { id: "AUD/USD", flag1: "🇦🇺", flag2: "🇺🇸", category: "forex", volatility: "medium", trend: "down", change: -0.15, popular: true },
-  { id: "USD/CAD", flag1: "🇺🇸", flag2: "🇨🇦", category: "forex", volatility: "medium", trend: "up", change: 0.21, popular: false },
-  { id: "NZD/USD", flag1: "🇳🇿", flag2: "🇺🇸", category: "forex", volatility: "medium", trend: "down", change: -0.18, popular: false },
-  // Forex Crosses
-  { id: "EUR/GBP", flag1: "🇪🇺", flag2: "🇬🇧", category: "forex", volatility: "low", trend: "up", change: 0.05, popular: false },
-  { id: "EUR/JPY", flag1: "🇪🇺", flag2: "🇯🇵", category: "forex", volatility: "high", trend: "up", change: 0.42, popular: true },
-  { id: "GBP/JPY", flag1: "🇬🇧", flag2: "🇯🇵", category: "forex", volatility: "high", trend: "down", change: -0.56, popular: true },
-  { id: "EUR/CHF", flag1: "🇪🇺", flag2: "🇨🇭", category: "forex", volatility: "low", trend: "up", change: 0.03, popular: false },
-  { id: "AUD/JPY", flag1: "🇦🇺", flag2: "🇯🇵", category: "forex", volatility: "high", trend: "up", change: 0.31, popular: false },
-  { id: "CAD/JPY", flag1: "🇨🇦", flag2: "🇯🇵", category: "forex", volatility: "medium", trend: "down", change: -0.22, popular: false },
-  { id: "CHF/JPY", flag1: "🇨🇭", flag2: "🇯🇵", category: "forex", volatility: "medium", trend: "up", change: 0.19, popular: false },
-  { id: "EUR/AUD", flag1: "🇪🇺", flag2: "🇦🇺", category: "forex", volatility: "medium", trend: "up", change: 0.27, popular: false },
-  { id: "GBP/CHF", flag1: "🇬🇧", flag2: "🇨🇭", category: "forex", volatility: "medium", trend: "down", change: -0.11, popular: false },
-  // Crypto
-  { id: "BTC/USD", flag1: "₿", flag2: "🇺🇸", category: "crypto", volatility: "high", trend: "up", change: 2.34, popular: true },
-  { id: "ETH/USD", flag1: "Ξ", flag2: "🇺🇸", category: "crypto", volatility: "high", trend: "down", change: -0.89, popular: true },
-  { id: "LTC/USD", flag1: "Ł", flag2: "🇺🇸", category: "crypto", volatility: "high", trend: "up", change: 1.56, popular: false },
-  { id: "XRP/USD", flag1: "✕", flag2: "🇺🇸", category: "crypto", volatility: "high", trend: "up", change: 3.21, popular: false },
-  // Commodities
-  { id: "XAU/USD", flag1: "🥇", flag2: "🇺🇸", category: "commodity", volatility: "medium", trend: "up", change: 0.45, popular: true },
-  { id: "XAG/USD", flag1: "🥈", flag2: "🇺🇸", category: "commodity", volatility: "medium", trend: "down", change: -0.32, popular: false },
-  { id: "OIL/USD", flag1: "🛢️", flag2: "🇺🇸", category: "commodity", volatility: "high", trend: "up", change: 1.23, popular: true },
+type PairItem = {
+  id: string;
+  category: "otc";
+  popular: boolean;
+};
+
+const recommendedOtcPairs: PairItem[] = [
+  { id: "AED/CNY", category: "otc", popular: true },
+  { id: "AUD/CAD", category: "otc", popular: true },
+  { id: "AUD/CHF", category: "otc", popular: true },
+  { id: "BHD/CNY", category: "otc", popular: true },
+  { id: "CHF/JPY", category: "otc", popular: true },
+  { id: "EUR/JPY", category: "otc", popular: true },
+  { id: "EUR/USD", category: "otc", popular: true },
+  { id: "GBP/USD", category: "otc", popular: true },
+  { id: "JOD/CNY", category: "otc", popular: true },
+  { id: "LBP/USD", category: "otc", popular: true },
+  { id: "NGN/USD", category: "otc", popular: true },
+  { id: "OMR/CNY", category: "otc", popular: true },
+  { id: "UAH/USD", category: "otc", popular: true },
+  { id: "USD/BRL", category: "otc", popular: true },
+  { id: "USD/CAD", category: "otc", popular: true },
+  { id: "USD/CLP", category: "otc", popular: true },
+  { id: "USD/EGP", category: "otc", popular: true },
+  { id: "USD/PHP", category: "otc", popular: true },
+  { id: "USD/RUB", category: "otc", popular: true },
+  { id: "USD/THB", category: "otc", popular: true },
+  { id: "USD/VND", category: "otc", popular: true },
+  { id: "ZAR/USD", category: "otc", popular: true },
+  // Доп. рекомендованные из списка
+  { id: "EUR/HUF", category: "otc", popular: true },
+  { id: "KES/USD", category: "otc", popular: true },
+  { id: "EUR/CAD", category: "otc", popular: true },
+  { id: "AUD/JPY", category: "otc", popular: true },
+  { id: "EUR/TRY", category: "otc", popular: true },
+  { id: "USD/INR", category: "otc", popular: true },
+  { id: "AUD/NZD", category: "otc", popular: true },
+  { id: "USD/JPY", category: "otc", popular: true },
+  { id: "CAD/JPY", category: "otc", popular: true },
+  { id: "TND/USD", category: "otc", popular: true },
+  { id: "NZD/USD", category: "otc", popular: true },
 ];
 
 const categories = [
   { id: "all", label: "Все", icon: Star },
-  { id: "popular", label: "Популярные", icon: Flame },
-  { id: "forex", label: "Forex", icon: TrendingUp },
-  { id: "crypto", label: "Крипто", icon: TrendingDown },
-  { id: "commodity", label: "Товары", icon: Clock },
+  { id: "popular", label: "Рекомендуемые", icon: Flame },
 ];
 
 export const CurrencyPairSelector = ({ selected, onSelect }: CurrencyPairSelectorProps) => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("popular");
 
+  const getPairParts = (id: string) => {
+    const [base, quote] = id.split("/");
+    return { base: base || id, quote: quote || "" };
+  };
+
   const filteredPairs = useMemo(() => {
-    return allPairs.filter((pair) => {
+    return recommendedOtcPairs.filter((pair) => {
       const matchesSearch = pair.id.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = 
         activeCategory === "all" ||
-        (activeCategory === "popular" && pair.popular) ||
-        pair.category === activeCategory;
+        (activeCategory === "popular" && pair.popular);
       return matchesSearch && matchesCategory;
     });
   }, [search, activeCategory]);
@@ -73,7 +87,7 @@ export const CurrencyPairSelector = ({ selected, onSelect }: CurrencyPairSelecto
           Выберите <span className="gradient-text">валютную пару</span>
         </h2>
         <p className="text-muted-foreground">
-          {allPairs.length} активов доступно для торговли
+          Представлены рекомендуемые валютные пары
         </p>
       </div>
 
@@ -145,40 +159,23 @@ export const CurrencyPairSelector = ({ selected, onSelect }: CurrencyPairSelecto
 
               {/* Flags */}
               <div className="flex items-center justify-center gap-1 mb-2">
-                <span className="text-2xl">{pair.flag1}</span>
+                <span className="text-xs font-mono font-bold px-2 py-1 rounded-lg bg-secondary/40">
+                  {getPairParts(pair.id).base}
+                </span>
                 <span className="text-muted-foreground/50">/</span>
-                <span className="text-2xl">{pair.flag2}</span>
+                <span className="text-xs font-mono font-bold px-2 py-1 rounded-lg bg-secondary/40">
+                  {getPairParts(pair.id).quote}
+                </span>
               </div>
 
               {/* Pair name */}
               <p className="font-mono font-semibold text-sm mb-2">{pair.id}</p>
 
-              {/* Change indicator */}
-              <div className={cn(
-                "flex items-center justify-center gap-1 text-xs font-medium",
-                pair.trend === "up" ? "text-success" : "text-destructive"
-              )}>
-                {pair.trend === "up" ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : (
-                  <TrendingDown className="w-3 h-3" />
-                )}
-                {pair.change > 0 ? "+" : ""}{pair.change}%
-              </div>
-
-              {/* Volatility indicator */}
-              <div className="mt-2 flex justify-center gap-0.5">
-                {[1, 2, 3].map((level) => (
-                  <div
-                    key={level}
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full",
-                      level <= (pair.volatility === "low" ? 1 : pair.volatility === "medium" ? 2 : 3)
-                        ? "bg-primary"
-                        : "bg-muted"
-                    )}
-                  />
-                ))}
+              {/* Label */}
+              <div className="mt-2 flex items-center justify-center">
+                <span className="px-2 py-0.5 rounded-full bg-secondary/50 text-[10px] text-muted-foreground">
+                  OTC
+                </span>
               </div>
             </motion.button>
           ))}
