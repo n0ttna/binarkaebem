@@ -23,6 +23,16 @@ const Index = () => {
   const [expiration, setExpiration] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>("landing");
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [signalLocked, setSignalLocked] = useState(false);
+
+  const platformLabel =
+    platform === "pocketoption"
+      ? "Pocket Option"
+      : platform === "1win"
+        ? "1Win"
+        : platform === "binarium"
+          ? "Binarium"
+          : null;
 
   // Check if user has already completed registration before
   useEffect(() => {
@@ -99,6 +109,19 @@ const Index = () => {
     setCurrentStep("landing");
   };
 
+  const handleChangeBroker = () => {
+    if (signalLocked) return;
+    if (isTelegram) hapticFeedback("medium");
+
+    // Clear saved broker so user can re-pick platform
+    localStorage.removeItem("signalpro_user_data");
+    setShowRegistrationModal(false);
+    setPlatform(null);
+    setPair(null);
+    setExpiration(null);
+    setCurrentStep("platform");
+  };
+
   const handleLogoClick = () => {
     setPair(null);
     setExpiration(null);
@@ -140,6 +163,11 @@ const Index = () => {
     return () => hideBackButton();
   }, [currentStep, isTelegram, showBackButton, hideBackButton]);
 
+  // If user leaves signal screen, unlock controls defensively
+  useEffect(() => {
+    if (currentStep !== "signal") setSignalLocked(false);
+  }, [currentStep]);
+
   const steps = [
     { id: "platform", label: t("step.platform"), done: !!platform },
     { id: "pair", label: t("step.pair"), done: !!pair },
@@ -161,7 +189,12 @@ const Index = () => {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
       </div>
 
-      <Header onLogoClick={handleLogoClick} />
+      <Header
+        onLogoClick={handleLogoClick}
+        brokerLabel={platformLabel}
+        onChangeBroker={handleChangeBroker}
+        changeBrokerDisabled={signalLocked}
+      />
 
       <main className="relative container mx-auto px-4 py-6 md:py-8 max-w-6xl">
         {/* Progress Steps */}
@@ -319,6 +352,8 @@ const Index = () => {
                 </div>
                 <button
                   onClick={handleReset}
+                  disabled={signalLocked}
+                  title={signalLocked ? t("signal.waitEnd") : undefined}
                   className="glass-button flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl group"
                 >
                   <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
@@ -329,7 +364,12 @@ const Index = () => {
               {/* Chart & Signal */}
               <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
                 <TradingChart pair={pair} />
-                <SignalDisplay platform={platform} pair={pair} expiration={expiration} />
+                 <SignalDisplay
+                   platform={platform}
+                   pair={pair}
+                   expiration={expiration}
+                   onLockChange={setSignalLocked}
+                 />
               </div>
             </motion.div>
           )}
